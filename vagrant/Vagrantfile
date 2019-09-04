@@ -6,7 +6,7 @@
 NUM_MASTER_NODE = 2
 NUM_WORKER_NODE = 2
 
-#IP_NW = "172.18.96."
+IP_NW = "172.30.221."
 MASTER_IP_START = 10
 NODE_IP_START = 20
 LB_IP_START = 30
@@ -49,8 +49,8 @@ Vagrant.configure("2") do |config|
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
-  config.vm.synced_folder ".", "/vagrant", type: "smb",
-    smb_password:ENV['SMB_PASSWORD'], smb_username:ENV['SMB_USER']
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+  #  smb_password:ENV['SMB_PASSWORD'], smb_username:ENV['SMB_USER']
   #  mount_options: ["username=mymail@live.ru","password=mypass"]
 
   # Provider-specific configuration so you can fine-tune various
@@ -76,13 +76,15 @@ Vagrant.configure("2") do |config|
           h.linked_clone = true
         end
         node.vm.hostname = "master-#{i}"
-#        node.vm.network :private_network, bridge: "Default Switch", ip: IP_NW + "#{MASTER_IP_START + i}"
         node.vm.network :private_network, bridge: "Default Switch"
         node.vm.network "forwarded_port", guest: 22, host: "#{2710 + i}"
         node.vm.provision :shell, :inline => "sudo ln -fs /vagrant/etc-hosts /etc/hosts"        
+        node.vm.provision "setup-interface", :type => "shell", :path => "ubuntu/vagrant/setup-interface.sh" do |s|
+          s.args = [IP_NW + "#{MASTER_IP_START + i}"]
+        end
         node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
           s.args = ["eth0"]
-        end
+        end        
         node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
       end
   end
@@ -96,13 +98,15 @@ Vagrant.configure("2") do |config|
           h.linked_clone = true
         end
         node.vm.hostname = "loadbalancer"
-#        node.vm.network :private_network, bridge: "Default Switch", ip: IP_NW + "#{LB_IP_START}"
         node.vm.network :private_network, bridge: "Default Switch"
         node.vm.network "forwarded_port", guest: 22, host: 2730
         node.vm.provision :shell, :inline => "sudo ln -fs /vagrant/etc-hosts /etc/hosts"        
+        node.vm.provision "setup-interface", :type => "shell", :path => "ubuntu/vagrant/setup-interface.sh" do |s|
+          s.args = [IP_NW + "#{LB_IP_START}"]
+        end
         node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
           s.args = ["eth0"]
-        end
+        end        
         node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
       end
 
@@ -116,10 +120,12 @@ Vagrant.configure("2") do |config|
           h.linked_clone = true
         end
         node.vm.hostname = "worker-#{i}"
-#        node.vm.network :private_network, bridge: "Default Switch", ip: IP_NW + "#{NODE_IP_START + i}"
         node.vm.network :private_network, bridge: "Default Switch"
         node.vm.network "forwarded_port", guest: 22, host: "#{2720 + i}"
-        node.vm.provision :shell, :inline => "sudo ln -fs /vagrant/etc-hosts /etc/hosts"        
+        node.vm.provision :shell, :inline => "sudo ln -fs /vagrant/etc-hosts /etc/hosts"  
+        node.vm.provision "setup-interface", :type => "shell", :path => "ubuntu/vagrant/setup-interface.sh" do |s|
+          s.args = [IP_NW + "#{NODE_IP_START + i}"]
+        end              
         node.vm.provision "setup-hosts", :type => "shell", :path => "ubuntu/vagrant/setup-hosts.sh" do |s|
           s.args = ["eth0"]
         end
