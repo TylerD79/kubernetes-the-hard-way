@@ -1,1 +1,5 @@
-localhost 127.0.0.1
+172.20.185.30 loadbalancer
+172.20.185.11 master-1
+172.20.185.12 master-2
+172.20.185.21 worker-1
+172.20.185.22 worker-2
